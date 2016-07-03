@@ -1,0 +1,11 @@
+# pg_eyes extension
+
+comment = 'PostgreSQL extension for analyze database activity'
+default_version = 0.3
+
+requires = pg_stat_statements
+
+encoding = utf8
+superuser = true
+relocatable = false
+schema = eyes
