@@ -1,7 +1,7 @@
 # pg_eyes extension
 
 comment = 'PostgreSQL extension for analyze database activity'
-default_version = 0.4
+default_version = 0.5
 
 requires = pg_stat_statements
 
