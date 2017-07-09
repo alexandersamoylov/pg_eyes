@@ -4,7 +4,7 @@
 
 ## Установка
 
-###Версии расширения
+### Версии расширения
 
 В настоящий момент поддерживаются две ветки расширения для разных версий PostgreSQL:
 
@@ -13,11 +13,11 @@
 
 Для установки файлов расширения можно выполнить *suso make install* или скопировать вручную файлы расширения(*pg_eyes.control* и *sql/pg_eyes\*.sql*) в директорию *SHAREDIR/extension/*
 
-###Зависимости
+### Зависимости
 
 pg_stat_statements
 
-###Создание расширения
+### Создание расширения
 
     CREATE EXTENSION pg_eyes CASCADE;
 
@@ -146,7 +146,7 @@ pg_stat_statements
     (48 строк)
 
 
-####eyes.get_activity(p_stat_group character varying)
+#### eyes.get_activity(p_stat_group character varying)
 
 Функция для получения специфичных для конкретных баз данных или приложений метрик, настраиваемых дополнительно администраторами. Возвращает метрики только для заданной в параметре вызова группы. Для настройки нестандартных метрик используется таблица eyes.get_activity.
 
@@ -190,10 +190,10 @@ pg_stat_statements
 
 ### Полезные представления и функции
 
-####eyes.get_pg_stat_activity()
+#### eyes.get_pg_stat_activity()
 
 Функция возвращает результат запроса *"SELECT \* FROM pg_stat_activity;"*. Позволяет организовать полный доступ к данным представления pg_stat_activity пользователям без предоставления им роли superuser.
 
-####eyes.get_pg_stat_statements()
+#### eyes.get_pg_stat_statements()
 
 Функция возвращает результат запроса *"SELECT \* FROM pg_stat_statements;"*. Позволяет организовать полный доступ к данным представления pg_stat_statements пользователям без предоставления им роли superuser.
