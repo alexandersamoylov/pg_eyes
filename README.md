@@ -2,7 +2,9 @@
 
 Расширение включает в себя набор функций и представлений для мониторинга состояния базы данных PostgreSQL.
 
+
 ## Установка
+
 
 ### Версии расширения
 
@@ -13,19 +15,24 @@
 
 Для установки файлов расширения можно выполнить *suso make install* или скопировать вручную файлы расширения(*pg_eyes.control* и *sql/pg_eyes\*.sql*) в директорию *SHAREDIR/extension/*
 
+
 ### Зависимости
 
 pg_stat_statements
+
 
 ### Создание расширения
 
     CREATE EXTENSION pg_eyes CASCADE;
 
+
 ## Описание
+
 
 ### Функции мониторинга
 
 Функции мониторинга представляют собой api для различных инструментов мониторинга, позволяющий получить из базы данных набор метрик в готовом виде. При вызове функции клиенту возвращаются метрики в виде таблицы: метрика, значение. Функции создаются с опцией SECURITY DEFINER, поэтому пользователю системы мониторинга достаточно привилегий на выполнение функций в схеме eyes.
+
 
 #### eyes.get_activity()
 
@@ -188,12 +195,151 @@ pg_stat_statements
      table_size.testtable1_idx_size |      32768
     (2 строки)
 
-### Полезные представления и функции
+
+### Представления и функции для анализа текущей активности в базе данных
+
 
 #### eyes.get_pg_stat_activity()
 
 Функция возвращает результат запроса *"SELECT \* FROM pg_stat_activity;"*. Позволяет организовать полный доступ к данным представления pg_stat_activity пользователям без предоставления им роли superuser.
 
+
 #### eyes.get_pg_stat_statements()
 
 Функция возвращает результат запроса *"SELECT \* FROM pg_stat_statements;"*. Позволяет организовать полный доступ к данным представления pg_stat_statements пользователям без предоставления им роли superuser.
+
+
+### Представления с информацией о базе данных
+
+
+#### eyes.db_object
+Список объектов в базе данных(pg_class)
+
+| Столбец       | Тип   | Описание                                                                                     |
+|---------------|-------|----------------------------------------------------------------------------------------------|
+| object_oid    | oid   | pg_class.oid                                                                                 |
+| schema_name   | name  | pg_namespace.nspname                                                                         |
+| object_name   | name  | pg_class.relname                                                                             |
+| object_type   | text  | Тип объекта: table, view, materialized view, index, sequence, toast, foreign table, composite|
+| object_owner  | name  | pg_get_userbyid(pg_class.relowner)                                                           |
+| tablespace    | name  | pg_tablespace.spcname                                                                        |
+| object_options| text[]| pg_class.reloptions                                                                          |
+
+
+#### eyes.db_tables
+Список таблиц в базе данных
+
+| Столбец      | Тип   | Описание                          |
+|--------------|-------|-----------------------------------|
+| table_oid    | oid   | pg_class.oid                      |
+| schema_name  | name  | pg_namespace.nspname              |
+| table_name   | name  | pg_class.relname                  |
+| table_owner  | name  | pg_get_userbyid(pg_class.relowner)|
+| tablespace   | name  | pg_tablespace.spcname             |
+| seq_scan     | bigint| pg_stat_all_tables.seq_scan       |
+| seq_tup_read | bigint| pg_stat_all_tables.seq_tup_read   |
+| idx_scan     | bigint| pg_stat_all_tables.idx_scan       |
+| idx_tup_fetch| bigint| pg_stat_all_tables.idx_tup_fetch  |
+| n_tup_ins    | bigint| pg_stat_all_tables.n_tup_ins      |
+| n_tup_upd    | bigint| pg_stat_all_tables.n_tup_upd      |
+| n_tup_del    | bigint| pg_stat_all_tables.n_tup_del      |
+| n_tup_hot_upd| bigint| pg_stat_all_tables.n_tup_hot_upd  |
+
+
+#### eyes.db_tables_size
+Список таблиц в базе данных с расчетом размеров
+
+| Столбец      | Тип   | Описание                                      |
+|--------------|-------|-----------------------------------------------|
+| table_oid    | oid   | pg_class.oid                                  |
+| schema_name  | name  | pg_namespace.nspname                          |
+| table_name   | name  | pg_class.relname                              |
+| table_owner  | name  | pg_get_userbyid(pg_class.relowner)            |
+| tablespace   | name  | pg_tablespace.spcname                         |
+| seq_scan     | bigint| pg_stat_all_tables.seq_scan                   |
+| seq_tup_read | bigint| pg_stat_all_tables.seq_tup_read               |
+| idx_scan     | bigint| pg_stat_all_tables.idx_scan                   |
+| idx_tup_fetch| bigint| pg_stat_all_tables.idx_tup_fetch              |
+| n_tup_ins    | bigint| pg_stat_all_tables.n_tup_ins                  |
+| n_tup_upd    | bigint| pg_stat_all_tables.n_tup_upd                  |
+| n_tup_del    | bigint| pg_stat_all_tables.n_tup_del                  |
+| n_tup_hot_upd| bigint| pg_stat_all_tables.n_tup_hot_upd              |
+| table_size   | bigint| pg_table_size(pg_class.oid::regclass)         |
+| indexes_size | bigint| pg_indexes_size(pg_class.oid::regclass)       |
+| total_size   | bigint| pg_total_relation_size(pg_class.oid::regclass)|
+
+
+#### eyes.db_indexes
+Список индексов в базе данных
+
+| Столбец      | Тип   | Описание                         |
+|--------------|-------|----------------------------------|
+| table_oid    | oid   | pg_stat_all_indexes.relid        |
+| index_oid    | oid   | pg_class.oid                     |
+| schema_name  | name  | pg_namespace.nspname             |
+| table_name   | name  | pg_stat_all_indexes.relname      |
+| index_name   | name  | pg_class.relname                 |
+| tablespace   | name  | pg_tablespace.spcname            |
+| index_def    | text  | pg_get_indexdef(pg_class.oid)    |
+| idx_scan     | bigint| pg_stat_all_indexes.idx_scan     |
+| idx_tup_read | bigint| pg_stat_all_indexes.idx_tup_read |
+| idx_tup_fetch| bigint| pg_stat_all_indexes.idx_tup_fetch|
+
+
+#### eyes.db_indexes_size
+Список индексов в базе данных с расчетом размеров
+
+| Столбец      | Тип   | Описание                             |
+|--------------|-------|--------------------------------------|
+| table_oid    | oid   | pg_stat_all_indexes.relid            |
+| index_oid    | oid   | pg_class.oid                         |
+| schema_name  | name  | pg_namespace.nspname                 |
+| table_name   | name  | pg_stat_all_indexes.relname          |
+| index_name   | name  | pg_class.relname                     |
+| tablespace   | name  | pg_tablespace.spcname                |
+| index_def    | text  | pg_get_indexdef(pg_class.oid)        |
+| idx_scan     | bigint| pg_stat_all_indexes.idx_scan         |
+| idx_tup_read | bigint| pg_stat_all_indexes.idx_tup_read     |
+| idx_tup_fetch| bigint| pg_stat_all_indexes.idx_tup_fetch    |
+| index_size   | bigint| pg_table_size(pg_class.oid::regclass)|
+
+
+#### eyes.db_attributes
+Список атрибутов в базе данных
+
+| Столбец       | Тип     | Описание                                                                                     |
+|---------------|---------|----------------------------------------------------------------------------------------------|
+| object_oid    | oid     | pg_class.oid                                                                                 |
+| schema_name   | name    | pg_namespace.nspname                                                                         |
+| object_name   | name    | pg_class.relname                                                                             |
+| object_type   | name    | Тип объекта: table, view, materialized view, index, sequence, toast, foreign table, composite|
+| attribute_num | smallint| pg_attribute.attnum                                                                          |
+| attribute_name| name    | pg_attribute.attname                                                                         |
+| attribute_type| text    | format_type(pg_attribute.atttypid, pg_attribute.atttypmod)                                   |
+| is_not_null   | boolean | pg_attribute.attnotnull                                                                      |
+
+
+#### eyes.db_functions
+Список функций в базе данных
+
+| Столбец       | Тип | Описание                         |
+|---------------|-----|----------------------------------|
+| function_oid  | oid | pg_proc.oid                      |
+| schema_name   | name| pg_namespace.nspname             |
+| function_name | name| pg_proc.proname                  |
+| function_owner| name| pg_get_userbyid(pg_proc.proowner)|
+| function_def  | text| pg_get_functiondef(pg_proc.oid)  |
+
+
+#### eyes.db_settings
+Список параметров
+
+| Столбец   | Тип    | Описание                         |
+|-----------|--------|----------------------------------|
+| name      | text   | pg_settings.name                 |
+| setting   | text   | current_setting(pg_settings.name)|
+| context   | text   | pg_settings.context              |
+| source    | text   | pg_settings.source               |
+| sourcefile| text   | pg_settings.sourcefile           |
+| sourceline| integer| pg_settings.sourceline           |
+
